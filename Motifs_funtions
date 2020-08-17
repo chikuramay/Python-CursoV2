@@ -1,0 +1,168 @@
+import random
+#--------------------------------------------------------------------
+def RandomMotifs(Dna, k, t):
+    t = len(Dna)
+    l = len(Dna[0])
+    RandomMotif =[]
+    for i in range(t):
+        r = random.randint(0,l-k) # 1 is not added as it is inclusive of last element also
+        RandomMotif.append(Dna[i][r:r+k])
+    return RandomMotif
+#--------------------------------------------------------------------
+def ProfileWithPseudocounts(Motifs): # ProfileWithPseudocounts
+    t = len(Motifs)
+    k = len(Motifs[0])
+    profile = {}
+    profile =  Count(Motifs)
+    for i in profile:
+        for j in range(k):
+            profile[i][j] = profile[i][j]/(4+t)
+    return profile
+#--------------------------------------------------------------------
+def CountWithPseudocounts(Motifs):   # CountWithPseudocounts
+    count = {}
+    t = len(Motifs)
+    k = len(Motifs[0])
+    for symbol in "ACGT":
+        count[symbol] = []
+        for j in range(k):
+            count[symbol].append(1)
+    for i in range(t):
+        for j in range(k):
+            symbol = Motifs[i][j]
+            count[symbol][j] += 1
+    return count
+#--------------------------------------------------------------------
+def HammingDistance(gen_1, gen_2):
+    count = 0
+    for i in range(len(gen_1)):
+        if gen_1[i] != gen_2[i]:
+            count += 1
+    return count
+#--------------------------------------------------------------------
+def Score(Motifs):
+    score = 0
+    for i in range(len(Motifs)):
+        score += HammingDistance(Consensus(Motifs), Motifs[i])
+    return score
+#--------------------------------------------------------------------
+def Consensus(Motifs):
+    k = len(Motifs[0])
+    count = Count(Motifs)
+    consensus = ""
+    for j in range(k):
+        m = 0
+        frequentSymbol = ""
+        for symbol in "ACGT":
+            if count[symbol][j] > m:
+                m = count[symbol][j]
+                frequentSymbol = symbol
+        consensus += frequentSymbol
+    return consensus
+#--------------------------------------------------------------------
+def Count(Motifs):
+    count = {}
+    for i in 'ACGT':
+        count[i] = []
+        for ii in range(len(Motifs[0])):
+            count[i].append(0)
+    for i in range(len(Motifs)):
+        for j in range(len(Motifs[0])):
+            symbol = Motifs[i][j]
+            count[symbol][j] += 1
+    return count
+#--------------------------------------------------------------------
+def Pr(Text, Profile):
+    p = 1
+    for i in range(len(Text)):
+        p = p*Profile[Text[i]][i]
+    return p
+#--------------------------------------------------------------------
+def ProfileMostProbablePattern(Text, k, profile):
+    n = len(Text)
+    m = -1 #This is the bug - need to adjust it to -1 from 0
+    x = Text[1:k]
+    for i in range(n-k+1):
+        Pattern =  Text[i:i+k]
+        p = Pr(Pattern, profile)
+        if p>m:
+            m = p
+            x = Pattern
+    return x
+#--------------------------------------------------------------------
+def RandomMotifs(dna,k,t):
+    kmm = []
+    sc = []
+    D = {}
+    for i in range(0,len(dna)):
+        km = []
+        for nb in range(len(dna[i])-k+1):
+            km += [dna[i][nb:nb+k]]
+        D[i] = km
+    for m in range(0,t):
+        ran = random.randint(0,len(D[0])-1)
+        kmm += [D[m][ran]]
+    return kmm
+#--------------------------------------------------------------------
+def Motifs(Profile, Dna):
+    motifs = []
+    t = len(Dna)
+    for i in range(t):
+        motif = ProfileMostProbablePattern(Dna[i], k, Profile)
+        motifs.append(motif)
+    return motifs
+#--------------------------------------------------------------------
+def RandomizedMotifSearch(Dna, k, t, N):
+    M = RandomMotifs(Dna, k, t)
+    BestMotifs = M
+    loop = 0
+    while True:
+        for i in range(N):
+            Profile = ProfileWithPseudocounts(M)
+            M = Motifs(Profile, Dna)
+            if Score(M) < Score(BestMotifs):
+                BestMotifs = M
+                loop +=1
+            else:
+                return BestMotifs
+#--------------------------------------------------------------------
+def Normalize(Probabilities):
+    # your code here
+    d = {}
+    for k,v in Probabilities.items():
+        d[k] = Probabilities[k]/sum(Probabilities.values())
+    return d
+#--------------------------------------------------------------------
+def WeightedDie(Probabilities):
+    count = 0
+    p = random.uniform(0,1)
+    for k,v in Probabilities.items():
+        count = count+v
+        if p < count:
+            return k
+#--------------------------------------------------------------------
+def ProfileGeneratedString(Text, profile, k):
+    n = len(Text)
+    probabilities = {}
+    for i in range(0,n-k+1):
+        probabilities[Text[i:i+k]] = Pr(Text[i:i+k], profile)
+    probabilities = Normalize(probabilities)
+    return WeightedDie(probabilities)
+#--------------------------------------------------------------------
+def GibbsSampler(Dna, k, t, N):
+    BestMotifs = []
+    # randomly select k-mers Motifs = (Motif1, …, Motift) in each string from Dna
+    Motifs = RandomMotifs(Dna,k,t)
+    # BestMotifs ← Motifs
+    BestMotifs = Motifs.copy()
+    # for j ← 1 to N
+    for i in range(N):
+        # i ← randomly generated integer between 1 and t
+        i = random.randint(0,t-1) # python lists start at 0
+        # Profile ← profile matrix formed from all strings in Motifs except for Motifi
+        # Motifi ← Profile-randomly generated k-mer in the i-th string
+        profile = ProfileWithPseudocounts(Motifs)
+        if Score(Motifs) < Score(BestMotifs):
+            BestMotifs = Motifs
+        return BestMotifs
+#--------------------------
