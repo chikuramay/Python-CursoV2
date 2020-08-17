@@ -1,0 +1,24 @@
+def SkewArray(Genome):
+    ccount = 0
+    Skew = [0]
+    for g in Genome:
+        if g == 'C':
+            ccount -= 1
+        elif g == 'G':
+            ccount += 1
+        Skew.append(ccount)
+    return Skew
+#--------------------------------------------------------
+def HammingDistance(gen_1, gen_2):
+    count = 0
+    for i in range(len(gen_1)):
+        if gen_1[i] != gen_2[i]:
+            count += 1
+    return count
+#--------------------------------------------------------
+def ApproximatePatternMatching(Text, Pattern, d):
+    positions = [] # initializing list of positions
+    for i in range(len(Text)-len(Pattern)+1):
+        if HammingDistance(Text[i:i+len(Pattern)], Pattern) <= d:
+            positions.append(i)
+    return positions
